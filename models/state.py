@@ -1,12 +1,13 @@
 #!/usr/bin/python3
-""" State Module for HBNB project """
-from models.base_model import BaseModel, Base
-from models.city import City
-from sqlalchemy import Column, String
-from sqlalchemy.orm import relationship
+"""Defines the State class."""
+from models.base_model import BaseModel
 
-class State(BaseModel, Base):
-    """ State class to store state information """
-    __tablename__ = "states"
-    name = Column(String(128), nullable=False)
-    cities = relationship("City", backref="state", cascade="all, delete-orphan")
+
+class State(BaseModel):
+    """Represents a State in the AirBnB project."""
+
+    name = ""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize a new State instance."""
+        super().__init__(*args, **kwargs)
