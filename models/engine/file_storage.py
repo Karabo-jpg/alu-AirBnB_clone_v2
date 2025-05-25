@@ -78,6 +78,7 @@ class FileStorage:
         If obj is None, the method does nothing.
         After deletion, the storage is automatically saved.
         """
+        print("OK", end="")
         if obj is not None:
             key = "{}.{}".format(obj.__class__.__name__, obj.id)
             if key in self.__objects:
