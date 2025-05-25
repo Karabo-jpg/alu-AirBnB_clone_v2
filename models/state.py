@@ -1,17 +1,28 @@
 #!/usr/bin/python3
-"""This module defines the State class."""
+""" State Module for HBNB project for AirBNB_clone_v2"""
+
+
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship
+from models.engine.file_storage import FileStorage
+from os import getenv
 
 
 class State(BaseModel, Base):
-    """This class defines a state by various attributes."""
+    """ State class definition in the next line"""
     __tablename__ = 'states'
-    name = Column(String(128), nullable=False, default="")
+    name = Column(String(128), nullable=False)
+    cities = relationship('City', backref='state', cascade="all, delete")
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-if __name__ == "__main__":
-    pass
+    if getenv("HBNB_TYPE_STORAGE") != 'db':
+        @property
+        def cities(self):
+            from models import storage
+            from models.city import City
+            """Get a list of all related City objects."""
+            city_list = []
+            for city in list(storage.all(City).values()):
+                if city.state_id == self.id:
+                    city_list.append(city)
+            return city_list
