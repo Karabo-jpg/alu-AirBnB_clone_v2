@@ -31,6 +31,8 @@ class FileStorage:
         Args:
             cls (type, optional): If provided, returns only objects of this class.
                                  If None, returns all objects.
+        Returns:
+            dict: A dictionary of objects filtered by class if specified.
         """
         if cls is None:
             return self.__objects
@@ -56,7 +58,6 @@ class FileStorage:
 
     def reload(self):
         """Deserialize the JSON file to __objects."""
-        from models import storage
         try:
             with open(self.__file_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -72,12 +73,16 @@ class FileStorage:
         
         Args:
             obj: The object to delete. If None, do nothing.
+            
+        This method removes an object from the storage if it exists.
+        If obj is None, the method does nothing.
+        After deletion, the storage is automatically saved.
         """
         if obj is not None:
             key = "{}.{}".format(obj.__class__.__name__, obj.id)
             if key in self.__objects:
                 del self.__objects[key]
-        print("OK")
+                self.save()
 
 
 if __name__ == "__main__":
