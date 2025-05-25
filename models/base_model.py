@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+
 class BaseModel:
     """This class defines all common attributes/methods for other classes."""
     id = Column(String(60), primary_key=True, nullable=False)
@@ -47,6 +48,7 @@ class BaseModel:
         dict_copy["created_at"] = self.created_at.isoformat()
         dict_copy["updated_at"] = self.updated_at.isoformat()
         return dict_copy
+
 
 if __name__ == "__main__":
     pass

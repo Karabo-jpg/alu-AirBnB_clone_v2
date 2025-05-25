@@ -19,6 +19,7 @@ classes = {
     "Review": Review
 }
 
+
 class FileStorage:
     """This class serializes instances to a JSON file and deserializes back."""
     __file_path = "file.json"
@@ -28,7 +29,9 @@ class FileStorage:
         """Return a dictionary of all objects or objects of a specific class."""
         if cls is None:
             return self.__objects
-        return {k: v for k, v in self.__objects.items() if isinstance(v, cls)}
+        filtered = {k: v for k, v in self.__objects.items()
+                    if isinstance(v, cls)}
+        return filtered
 
     def new(self, obj):
         """Add a new object to __objects."""
@@ -56,6 +59,7 @@ class FileStorage:
                         self.__objects[key] = classes[class_name](**value)
         except FileNotFoundError:
             pass
+
 
 if __name__ == "__main__":
     pass

@@ -7,9 +7,10 @@ from sqlalchemy import Column, String, ForeignKey
 class Review(BaseModel, Base):
     """This class defines a review by various attributes."""
     __tablename__ = 'reviews'
-
-    place_id = Column(String(60), ForeignKey('places.id'), nullable=False, default="")
-    user_id = Column(String(60), ForeignKey('users.id'), nullable=False, default="")
+    place_id = Column(String(60), ForeignKey('places.id'), nullable=False,
+                      default="")
+    user_id = Column(String(60), ForeignKey('users.id'), nullable=False,
+                     default="")
     text = Column(String(1024), nullable=True, default="")
 
     def __init__(self, *args, **kwargs):
