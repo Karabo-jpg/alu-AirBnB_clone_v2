@@ -1,69 +1,56 @@
 #!/usr/bin/python3
-""" """
-from tests.test_models.test_base_model import test_basemodel
+"""Tests for Place class."""
+import unittest
 from models.place import Place
+from datetime import datetime
 
 
-class test_Place(test_basemodel):
-    """ """
+class TestPlace(unittest.TestCase):
+    """Test cases for the Place class."""
 
-    def __init__(self, *args, **kwargs):
-        """ """
-        super().__init__(*args, **kwargs)
-        self.name = "Place"
-        self.value = Place
+    def setUp(self):
+        """Set up before each test."""
+        self.place = Place()
 
-    def test_city_id(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.city_id), str)
+    def test_init(self):
+        """Test initialization of Place."""
+        self.assertIsInstance(self.place.id, str)
+        self.assertIsInstance(self.place.created_at, datetime)
+        self.assertIsInstance(self.place.updated_at, datetime)
+        self.assertEqual(self.place.city_id, "")
+        self.assertEqual(self.place.user_id, "")
+        self.assertEqual(self.place.name, "")
 
-    def test_user_id(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.user_id), str)
+    def test_attributes(self):
+        """Test place attributes."""
+        self.place.city_id = "123"
+        self.place.user_id = "456"
+        self.place.name = "Cozy Cabin"
+        self.assertEqual(self.place.city_id, "123")
+        self.assertEqual(self.place.user_id, "456")
+        self.assertEqual(self.place.name, "Cozy Cabin")
 
-    def test_name(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.name), str)
+    def test_str(self):
+        """Test string representation of Place."""
+        expected = f"[Place] ({self.place.id}) {self.place.__dict__}"
+        self.assertEqual(str(self.place), expected)
 
-    def test_description(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.description), str)
+    def test_save(self):
+        """Test save method updates updated_at."""
+        old_updated_at = self.place.updated_at
+        self.place.save()
+        self.assertNotEqual(old_updated_at, self.place.updated_at)
 
-    def test_number_rooms(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.number_rooms), int)
+    def test_to_dict(self):
+        """Test to_dict method creates a dictionary with correct attributes."""
+        place_dict = self.place.to_dict()
+        self.assertEqual(place_dict['__class__'], 'Place')
+        self.assertEqual(place_dict['id'], self.place.id)
+        self.assertEqual(place_dict['created_at'],
+                         self.place.created_at.isoformat())
+        self.assertEqual(place_dict['updated_at'],
+                         self.place.updated_at.isoformat())
 
-    def test_number_bathrooms(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.number_bathrooms), int)
 
-    def test_max_guest(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.max_guest), int)
-
-    def test_price_by_night(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.price_by_night), int)
-
-    def test_latitude(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.latitude), float)
-
-    def test_longitude(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.latitude), float)
-
-    def test_amenity_ids(self):
-        """ """
-        new = self.value()
-        self.assertEqual(type(new.amenity_ids), list)
+if __name__ == '__main__':
+    unittest.main()
