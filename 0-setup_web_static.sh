@@ -45,26 +45,27 @@ sudo chmod -R 755 /data/
 check_command "setting permissions"
 
 # Configure nginx
-config_content="server {
+sudo bash -c 'cat > /etc/nginx/sites-available/default << EOF
+server {
     listen 80 default_server;
     listen [::]:80 default_server;
-    server_name _;
+    add_header X-Served-By \$hostname;
+    root /var/www/html;
     index index.html index.htm;
+
     location /hbnb_static {
         alias /data/web_static/current/;
         index index.html index.htm;
     }
+
     location / {
-        root /var/www/html;
         try_files \$uri \$uri/ =404;
     }
-}"
-
-echo "$config_content" | sudo tee /etc/nginx/sites-available/default > /dev/null
+}
+EOF'
 check_command "creating nginx configuration"
 
-# Enable the site
-sudo rm -rf /etc/nginx/sites-enabled/*
+# Ensure default site is enabled
 sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 check_command "enabling nginx site"
 
@@ -72,9 +73,15 @@ check_command "enabling nginx site"
 sudo mkdir -p /var/www/html
 echo "Nginx is running" | sudo tee /var/www/html/index.html > /dev/null
 
-# Restart nginx
-sudo service nginx restart
-check_command "restarting nginx"
+# Stop nginx if running
+sudo service nginx stop || true
+
+# Start nginx
+sudo service nginx start
+check_command "starting nginx"
+
+# Wait a moment for nginx to fully start
+sleep 2
 
 # Verify setup
 if [ ! -d "/data/web_static/releases/test" ]; then
@@ -96,6 +103,13 @@ fi
 response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
 if [ "$response" != "200" ]; then
     echo "Error: Nginx configuration failed (Status: $response)"
+    echo "Debugging information:"
+    echo "Nginx error log:"
+    sudo tail /var/log/nginx/error.log
+    echo "Nginx configuration test:"
+    sudo nginx -t
+    echo "Listening ports:"
+    sudo netstat -tuln | grep LISTEN
     exit 1
 fi
 
