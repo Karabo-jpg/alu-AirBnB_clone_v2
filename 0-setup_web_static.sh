@@ -1,74 +1,82 @@
 #!/usr/bin/env bash
-# Script that sets up your web servers for the deployment of web_static
+# Script that sets up web servers for the deployment of web_static
+
+# Exit on any error
+set -e
+
+# Function to check command success
+check_command() {
+    if [ $? -ne 0 ]; then
+        echo "Error: $1 failed"
+        exit 1
+    fi
+}
 
 # Install nginx if not already installed
-apt-get -y update
-apt-get -y install nginx
+sudo apt-get -y update
+check_command "apt-get update"
+sudo apt-get -y install nginx
+check_command "nginx installation"
 
 # Stop Apache if it's running (it conflicts with nginx on port 80)
-service apache2 stop
-systemctl disable apache2
+if systemctl is-active apache2 >/dev/null 2>&1; then
+    sudo service apache2 stop
+    sudo systemctl disable apache2
+fi
 
 # Create directories if they don't exist
-mkdir -p /data/web_static/releases/test/
-mkdir -p /data/web_static/shared/
+sudo mkdir -p /data/web_static/releases/test/
+check_command "creating test directory"
+sudo mkdir -p /data/web_static/shared/
+check_command "creating shared directory"
 
 # Create a simple HTML file
-echo "Holberton School" > /data/web_static/releases/test/index.html
+echo "Holberton School" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+check_command "creating index.html"
 
 # Create or recreate symbolic link
-rm -rf /data/web_static/current
-ln -sf /data/web_static/releases/test /data/web_static/current
+sudo rm -rf /data/web_static/current
+sudo ln -sf /data/web_static/releases/test /data/web_static/current
+check_command "creating symbolic link"
 
-# Set permissions (using root since we're running with sudo)
-chown -R root:root /data/
-chmod -R 755 /data/
+# Set permissions
+sudo chown -R ubuntu:ubuntu /data/
+sudo chmod -R 755 /data/
+check_command "setting permissions"
 
-# Configure nginx with minimal configuration
-cat > /etc/nginx/sites-available/default << EOF
-server {
-    listen 80;
-    listen [::]:80;
-    server_name localhost;
-
-    root /var/www/html;
+# Configure nginx
+config_content="server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
     index index.html index.htm;
-
     location /hbnb_static {
         alias /data/web_static/current/;
-        index index.html;
+        index index.html index.htm;
     }
-
     location / {
+        root /var/www/html;
         try_files \$uri \$uri/ =404;
     }
-}
-EOF
+}"
 
-# Remove any existing enabled sites
-rm -rf /etc/nginx/sites-enabled/*
+echo "$config_content" | sudo tee /etc/nginx/sites-available/default > /dev/null
+check_command "creating nginx configuration"
 
-# Enable our site
-ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+# Enable the site
+sudo rm -rf /etc/nginx/sites-enabled/*
+sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+check_command "enabling nginx site"
 
-# Ensure nginx working directory exists
-mkdir -p /var/www/html
+# Create test index
+sudo mkdir -p /var/www/html
+echo "Nginx is running" | sudo tee /var/www/html/index.html > /dev/null
 
-# Create a test index file
-echo "Nginx is running" > /var/www/html/index.html
-
-# Stop nginx completely
-service nginx stop
-killall nginx
-
-# Start nginx fresh
-service nginx start
-
-# Wait for nginx to start
-sleep 5
+# Restart nginx
+sudo service nginx restart
+check_command "restarting nginx"
 
 # Verify setup
-echo "Checking configuration..."
 if [ ! -d "/data/web_static/releases/test" ]; then
     echo "Error: Test directory not created"
     exit 1
@@ -85,28 +93,9 @@ if [ ! -L "/data/web_static/current" ]; then
 fi
 
 # Test nginx response
-echo "Testing nginx response..."
-echo "Checking nginx process:"
-ps aux | grep nginx
-echo "Checking port 80:"
-netstat -tuln | grep :80
-echo "Testing connection:"
-curl -v http://127.0.0.1/hbnb_static/index.html
-
-# Final test
-response=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/hbnb_static/index.html)
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
 if [ "$response" != "200" ]; then
     echo "Error: Nginx configuration failed (Status: $response)"
-    echo "Debugging information:"
-    echo "Directory listing:"
-    ls -la /data/web_static/current/
-    ls -la /data/web_static/releases/test/
-    echo "Nginx error log:"
-    tail /var/log/nginx/error.log
-    echo "Nginx access log:"
-    tail /var/log/nginx/access.log
-    echo "Nginx status:"
-    service nginx status
     exit 1
 fi
 
