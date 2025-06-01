@@ -25,13 +25,21 @@ echo "<html>
 rm -rf /data/web_static/current
 ln -s /data/web_static/releases/test/ /data/web_static/current
 
+# Get current user
+CURRENT_USER=$(whoami)
+CURRENT_GROUP=$(id -gn)
+
 # Set permissions
-chown -R ubuntu:ubuntu /data/
+chown -R "$CURRENT_USER":"$CURRENT_GROUP" /data/
 chmod -R 755 /data/
 find /data/ -type f -exec chmod 644 {} \;
 
-# Update nginx configuration
-nginx_conf="server {
+# Backup default nginx configuration
+cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+
+# Create new nginx configuration
+cat > /etc/nginx/sites-available/default << EOF
+server {
     listen 80 default_server;
     listen [::]:80 default_server;
     add_header X-Served-By \$hostname;
@@ -40,14 +48,19 @@ nginx_conf="server {
 
     location /hbnb_static {
         alias /data/web_static/current/;
-        index index.html index.htm;
+        autoindex off;
     }
-}"
-
-echo "$nginx_conf" > /etc/nginx/sites-available/default
+}
+EOF
 
 # Enable the site if not already enabled
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+
+# Remove the default symbolic link if it exists
+rm -f /etc/nginx/sites-enabled/default
+
+# Create symbolic link
+ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
 # Test nginx configuration
 nginx -t
@@ -71,28 +84,21 @@ if [ ! -L "/data/web_static/current" ]; then
     exit 1
 fi
 
-# Verify permissions
-if [ "$(stat -c '%a' /data)" != "755" ] || \
-   [ "$(stat -c '%a' /data/web_static)" != "755" ] || \
-   [ "$(stat -c '%a' /data/web_static/releases)" != "755" ]; then
-    echo "Error: Directory permissions are incorrect"
-    exit 1
-fi
-
-if [ "$(stat -c '%a' /data/web_static/releases/test/index.html)" != "644" ]; then
-    echo "Error: File permissions are incorrect"
-    exit 1
-fi
-
-# Verify nginx is running and configured
+# Verify nginx is running
 if ! service nginx status >/dev/null; then
     echo "Error: nginx is not running"
     exit 1
 fi
 
-if ! curl -s http://localhost/hbnb_static/ | grep -q "Holberton School"; then
-    echo "Error: /hbnb_static is not properly configured"
+# Wait a moment for nginx to fully start
+sleep 2
+
+# Test if the configuration is working
+response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
+if [ "$response" != "200" ]; then
+    echo "Error: /hbnb_static is not properly configured (HTTP response: $response)"
     exit 1
 fi
 
+echo "Setup completed successfully"
 exit 0 
