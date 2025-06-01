@@ -2,6 +2,12 @@
 # Script that sets up web servers for the deployment of web_static by installing Nginx,
 # creating necessary folders and setting up configurations
 
+# Check if running with sudo/root privileges
+if [ "$(id -u)" != "0" ]; then
+   echo "This script must be run as root" 1>&2
+   exit 1
+fi
+
 # Exit on any error
 set -e
 
@@ -62,10 +68,16 @@ echo "$config_string" > /etc/nginx/sites-available/default
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
 # Verify Nginx configuration
-nginx -t || exit 1
+nginx -t || {
+    echo "Nginx configuration test failed"
+    exit 1
+}
 
 # Restart Nginx
-service nginx restart
+if ! service nginx restart; then
+    echo "Failed to restart Nginx"
+    exit 1
+fi
 
 # Verify directories and permissions
 if [ ! -d "/data" ] || [ ! -d "/data/web_static" ] || [ ! -d "/data/web_static/releases" ] || [ ! -d "/data/web_static/releases/test" ] || [ ! -d "/data/web_static/shared" ]; then
