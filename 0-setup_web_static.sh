@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Script that sets up web servers for the deployment of web_static
 
-# Exit on any error
-set -e
+# Exit on any error and print commands as they are executed
+set -ex
 
 # Function to check command success
 check_command() {
@@ -12,21 +12,14 @@ check_command() {
     fi
 }
 
-# Get current user
-CURRENT_USER=$(whoami)
-CURRENT_GROUP=$(id -gn)
+echo "Starting web static setup..."
 
 # Install nginx if not already installed
 sudo apt-get -y update
-check_command "apt-get update"
 sudo apt-get -y install nginx
 check_command "nginx installation"
 
-# Stop Apache if it's running (it conflicts with nginx on port 80)
-if systemctl is-active apache2 >/dev/null 2>&1; then
-    sudo service apache2 stop
-    sudo systemctl disable apache2
-fi
+echo "Nginx installed successfully"
 
 # Create directories if they don't exist
 sudo mkdir -p /data/web_static/releases/test/
@@ -34,19 +27,27 @@ check_command "creating test directory"
 sudo mkdir -p /data/web_static/shared/
 check_command "creating shared directory"
 
+echo "Directories created successfully"
+
 # Create a simple HTML file
 echo "Holberton School" | sudo tee /data/web_static/releases/test/index.html > /dev/null
 check_command "creating index.html"
+
+echo "Index file created successfully"
 
 # Create or recreate symbolic link
 sudo rm -rf /data/web_static/current
 sudo ln -sf /data/web_static/releases/test /data/web_static/current
 check_command "creating symbolic link"
 
+echo "Symbolic link created successfully"
+
 # Set permissions
-sudo chown -R "$CURRENT_USER:$CURRENT_GROUP" /data/
+sudo chown -R "$USER:$USER" /data/
 sudo chmod -R 755 /data/
 check_command "setting permissions"
+
+echo "Permissions set successfully"
 
 # Configure nginx
 sudo bash -c 'cat > /etc/nginx/sites-available/default << EOF
@@ -60,6 +61,7 @@ server {
     location /hbnb_static {
         alias /data/web_static/current/;
         index index.html index.htm;
+        try_files \$uri \$uri/ =404;
     }
 
     location / {
@@ -69,20 +71,26 @@ server {
 EOF'
 check_command "creating nginx configuration"
 
+echo "Nginx configuration created successfully"
+
 # Ensure default site is enabled
+sudo rm -rf /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 check_command "enabling nginx site"
+
+echo "Nginx site enabled successfully"
 
 # Create test index
 sudo mkdir -p /var/www/html
 echo "Nginx is running" | sudo tee /var/www/html/index.html > /dev/null
 
-# Stop nginx if running
-sudo service nginx stop || true
+# Restart nginx
+sudo nginx -t
+check_command "testing nginx configuration"
+sudo systemctl restart nginx
+check_command "restarting nginx"
 
-# Start nginx
-sudo service nginx start
-check_command "starting nginx"
+echo "Nginx restarted successfully"
 
 # Wait a moment for nginx to fully start
 sleep 2
@@ -102,6 +110,8 @@ if [ ! -L "/data/web_static/current" ]; then
     echo "Error: Symbolic link not created"
     exit 1
 fi
+
+echo "Directory structure verified successfully"
 
 # Test nginx response
 response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
