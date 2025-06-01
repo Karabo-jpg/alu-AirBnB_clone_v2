@@ -5,6 +5,10 @@
 apt-get -y update
 apt-get -y install nginx
 
+# Stop Apache if it's running (it conflicts with nginx on port 80)
+service apache2 stop
+systemctl disable apache2
+
 # Create directories if they don't exist
 mkdir -p /data/web_static/releases/test/
 mkdir -p /data/web_static/shared/
@@ -20,30 +24,48 @@ ln -sf /data/web_static/releases/test /data/web_static/current
 chown -R root:root /data/
 chmod -R 755 /data/
 
-# Configure nginx
-echo "server {
+# Backup default nginx configuration
+mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
+
+# Configure nginx with minimal configuration
+cat > /etc/nginx/sites-available/default << EOF
+server {
     listen 80 default_server;
     listen [::]:80 default_server;
+    server_name _;
+
     root /var/www/html;
     index index.html index.htm;
-    location /hbnb_static {
+
+    location = / {
+        return 200 'Nginx is running\n';
+    }
+
+    location /hbnb_static/ {
         alias /data/web_static/current/;
         index index.html;
+        autoindex off;
     }
-}" > /etc/nginx/sites-available/default
+}
+EOF
 
-# Enable the site
+# Remove any existing enabled sites
+rm -rf /etc/nginx/sites-enabled/*
+
+# Enable our site
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Remove default nginx static page
-rm -rf /var/www/html/*
-echo "Nginx is running" > /var/www/html/index.html
+# Ensure nginx working directory exists
+mkdir -p /var/www/html
 
 # Test nginx configuration
 nginx -t
 
-# Restart nginx
-service nginx restart
+# Stop nginx if it's running
+service nginx stop
+
+# Start nginx fresh
+service nginx start
 
 # Verify setup
 echo "Checking configuration..."
@@ -62,16 +84,24 @@ if [ ! -L "/data/web_static/current" ]; then
     exit 1
 fi
 
+# Wait a moment for nginx to fully start
+sleep 2
+
 # Test nginx response
 echo "Testing nginx response..."
 response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
 if [ "$response" != "200" ]; then
     echo "Error: Nginx configuration failed (Status: $response)"
     echo "Debugging information:"
-    ls -l /data/web_static/current/
-    ls -l /data/web_static/releases/test/
-    cat /var/log/nginx/error.log
+    echo "Directory listing:"
+    ls -la /data/web_static/current/
+    ls -la /data/web_static/releases/test/
+    echo "Nginx error log:"
+    tail /var/log/nginx/error.log
+    echo "Testing direct access:"
     curl -v http://localhost/hbnb_static/index.html
+    echo "Nginx status:"
+    service nginx status
     exit 1
 fi
 
