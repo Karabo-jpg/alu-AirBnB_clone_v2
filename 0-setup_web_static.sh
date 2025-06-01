@@ -24,27 +24,23 @@ ln -sf /data/web_static/releases/test /data/web_static/current
 chown -R root:root /data/
 chmod -R 755 /data/
 
-# Backup default nginx configuration
-mv /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
-
 # Configure nginx with minimal configuration
 cat > /etc/nginx/sites-available/default << EOF
 server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
+    listen 80;
+    listen [::]:80;
+    server_name localhost;
 
     root /var/www/html;
     index index.html index.htm;
 
-    location = / {
-        return 200 'Nginx is running\n';
-    }
-
-    location /hbnb_static/ {
+    location /hbnb_static {
         alias /data/web_static/current/;
         index index.html;
-        autoindex off;
+    }
+
+    location / {
+        try_files \$uri \$uri/ =404;
     }
 }
 EOF
@@ -58,14 +54,18 @@ ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 # Ensure nginx working directory exists
 mkdir -p /var/www/html
 
-# Test nginx configuration
-nginx -t
+# Create a test index file
+echo "Nginx is running" > /var/www/html/index.html
 
-# Stop nginx if it's running
+# Stop nginx completely
 service nginx stop
+killall nginx
 
 # Start nginx fresh
 service nginx start
+
+# Wait for nginx to start
+sleep 5
 
 # Verify setup
 echo "Checking configuration..."
@@ -84,12 +84,17 @@ if [ ! -L "/data/web_static/current" ]; then
     exit 1
 fi
 
-# Wait a moment for nginx to fully start
-sleep 2
-
 # Test nginx response
 echo "Testing nginx response..."
-response=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/hbnb_static/index.html)
+echo "Checking nginx process:"
+ps aux | grep nginx
+echo "Checking port 80:"
+netstat -tuln | grep :80
+echo "Testing connection:"
+curl -v http://127.0.0.1/hbnb_static/index.html
+
+# Final test
+response=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1/hbnb_static/index.html)
 if [ "$response" != "200" ]; then
     echo "Error: Nginx configuration failed (Status: $response)"
     echo "Debugging information:"
@@ -98,8 +103,8 @@ if [ "$response" != "200" ]; then
     ls -la /data/web_static/releases/test/
     echo "Nginx error log:"
     tail /var/log/nginx/error.log
-    echo "Testing direct access:"
-    curl -v http://localhost/hbnb_static/index.html
+    echo "Nginx access log:"
+    tail /var/log/nginx/access.log
     echo "Nginx status:"
     service nginx status
     exit 1
