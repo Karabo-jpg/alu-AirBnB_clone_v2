@@ -2,8 +2,11 @@
 # Script that sets up web servers for the deployment of web_static by installing Nginx,
 # creating necessary folders and setting up configurations
 
+# Exit on any error
+set -e
+
 # Install Nginx if not already installed
-apt-get update
+apt-get -y update
 apt-get -y install nginx
 
 # Create necessary directories if they don't exist
@@ -24,9 +27,10 @@ echo "<!DOCTYPE html>
 rm -rf /data/web_static/current
 ln -sf /data/web_static/releases/test/ /data/web_static/current
 
-# Give ownership to ubuntu user and group
+# Set proper ownership and permissions
 chown -R ubuntu:ubuntu /data/
-chmod -R 755 /data/
+find /data/ -type d -exec chmod 755 {} \;
+find /data/ -type f -exec chmod 644 {} \;
 
 # Update Nginx configuration
 config_string="server {
@@ -57,8 +61,33 @@ echo "$config_string" > /etc/nginx/sites-available/default
 # Create symbolic link if it doesn't exist
 ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
 
-# Test Nginx configuration and restart
-nginx -t
+# Verify Nginx configuration
+nginx -t || exit 1
+
+# Restart Nginx
 service nginx restart
 
+# Verify directories and permissions
+if [ ! -d "/data" ] || [ ! -d "/data/web_static" ] || [ ! -d "/data/web_static/releases" ] || [ ! -d "/data/web_static/releases/test" ] || [ ! -d "/data/web_static/shared" ]; then
+    echo "Required directories are missing"
+    exit 1
+fi
+
+if [ ! -f "/data/web_static/releases/test/index.html" ]; then
+    echo "index.html file is missing"
+    exit 1
+fi
+
+if [ ! -L "/data/web_static/current" ]; then
+    echo "Symbolic link is missing"
+    exit 1
+fi
+
+# Test if Nginx is running
+if ! service nginx status > /dev/null; then
+    echo "Nginx is not running"
+    exit 1
+fi
+
+echo "Setup completed successfully"
 exit 0 
