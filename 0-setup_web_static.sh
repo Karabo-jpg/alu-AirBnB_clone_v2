@@ -12,6 +12,10 @@ check_command() {
     fi
 }
 
+# Get current user
+CURRENT_USER=$(whoami)
+CURRENT_GROUP=$(id -gn)
+
 # Install nginx if not already installed
 sudo apt-get -y update
 check_command "apt-get update"
@@ -40,7 +44,7 @@ sudo ln -sf /data/web_static/releases/test /data/web_static/current
 check_command "creating symbolic link"
 
 # Set permissions
-sudo chown -R ubuntu:ubuntu /data/
+sudo chown -R "$CURRENT_USER:$CURRENT_GROUP" /data/
 sudo chmod -R 755 /data/
 check_command "setting permissions"
 
