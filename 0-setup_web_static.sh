@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
-# Script that sets up web servers for the deployment of web_static
-
-# Exit on any error
-set -e
+# Script that sets up web servers for the deployment of web_static by installing Nginx,
+# creating necessary folders and setting up configurations
 
 # Install Nginx if not already installed
-sudo apt-get -y update
-sudo apt-get -y install nginx
+apt-get update
+apt-get -y install nginx
 
 # Create necessary directories if they don't exist
-sudo mkdir -p /data/web_static/releases/test/
-sudo mkdir -p /data/web_static/shared/
+mkdir -p /data/web_static/releases/test/
+mkdir -p /data/web_static/shared/
 
 # Create fake HTML file
-sudo echo "<html>
+echo "<!DOCTYPE html>
+<html>
   <head>
   </head>
   <body>
     Holberton School
   </body>
-</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
+</html>" > /data/web_static/releases/test/index.html
 
 # Create or recreate symbolic link
-sudo rm -rf /data/web_static/current
-sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
+rm -rf /data/web_static/current
+ln -sf /data/web_static/releases/test/ /data/web_static/current
 
 # Give ownership to ubuntu user and group
-sudo chown -R ubuntu:ubuntu /data/
+chown -R ubuntu:ubuntu /data/
+chmod -R 755 /data/
 
 # Update Nginx configuration
-nginx_conf="server {
+config_string="server {
     listen 80 default_server;
     listen [::]:80 default_server;
     add_header X-Served-By \$hostname;
@@ -52,9 +52,13 @@ nginx_conf="server {
     }
 }"
 
-echo "$nginx_conf" | sudo tee /etc/nginx/sites-available/default > /dev/null
+echo "$config_string" > /etc/nginx/sites-available/default
 
-# Restart Nginx
-sudo service nginx restart
+# Create symbolic link if it doesn't exist
+ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/
+
+# Test Nginx configuration and restart
+nginx -t
+service nginx restart
 
 exit 0 
