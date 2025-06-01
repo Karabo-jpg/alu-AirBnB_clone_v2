@@ -1,32 +1,35 @@
 #!/usr/bin/env bash
 # Script that sets up web servers for the deployment of web_static
 
+# Exit on any error
+set -e
+
 # Install Nginx if not already installed
-apt-get update
-apt-get -y install nginx
+sudo apt-get -y update
+sudo apt-get -y install nginx
 
 # Create necessary directories if they don't exist
-mkdir -p /data/web_static/releases/test/
-mkdir -p /data/web_static/shared/
+sudo mkdir -p /data/web_static/releases/test/
+sudo mkdir -p /data/web_static/shared/
 
 # Create fake HTML file
-echo "<html>
+sudo echo "<html>
   <head>
   </head>
   <body>
     Holberton School
   </body>
-</html>" > /data/web_static/releases/test/index.html
+</html>" | sudo tee /data/web_static/releases/test/index.html > /dev/null
 
 # Create or recreate symbolic link
-rm -rf /data/web_static/current
-ln -sf /data/web_static/releases/test/ /data/web_static/current
+sudo rm -rf /data/web_static/current
+sudo ln -sf /data/web_static/releases/test/ /data/web_static/current
 
 # Give ownership to ubuntu user and group
-chown -R ubuntu:ubuntu /data/
+sudo chown -R ubuntu:ubuntu /data/
 
 # Update Nginx configuration
-config_string="server {
+nginx_conf="server {
     listen 80 default_server;
     listen [::]:80 default_server;
     add_header X-Served-By \$hostname;
@@ -49,9 +52,9 @@ config_string="server {
     }
 }"
 
-echo "$config_string" > /etc/nginx/sites-available/default
+echo "$nginx_conf" | sudo tee /etc/nginx/sites-available/default > /dev/null
 
 # Restart Nginx
-service nginx restart
+sudo service nginx restart
 
 exit 0 
