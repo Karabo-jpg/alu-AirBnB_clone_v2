@@ -25,8 +25,12 @@ EOF
 rm -rf /data/web_static/current
 ln -sf /data/web_static/releases/test /data/web_static/current
 
+# Get current user and group
+CURRENT_USER=$(logname)
+CURRENT_GROUP=$(id -gn "$CURRENT_USER")
+
 # Set ownership and permissions
-chown -R ubuntu:ubuntu /data/
+chown -R "$CURRENT_USER":"$CURRENT_GROUP" /data/
 chmod -R 755 /data/
 
 # Configure nginx
