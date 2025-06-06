@@ -46,7 +46,7 @@ class DBStorage:
         else:
             if type(cls) is str:
                 cls = eval(cls)
-            objs = self.__session.query(cls)
+            objs = self.__session.query(cls).all()
         return {"{}.{}".format(type(o).__name__, o.id): o for o in objs}
 
     def new(self, obj):
@@ -65,17 +65,14 @@ class DBStorage:
     def reload(self):
         """Create all tables in the database and initialize a new session."""
         Base.metadata.create_all(self.__engine)
-        session = sessionmaker(bind=self.__engine, expire_on_commit=False)
-        Session = scoped_session(session)
+        session_factory = sessionmaker(bind=self.__engine,
+                                    expire_on_commit=False)
+        Session = scoped_session(session_factory)
         self.__session = Session()
 
     def close(self):
-        """Call remove() method on the private session attribute and create new session."""
-        if self.__session:
-            self.__session.close()
-            self.__session.remove()
-            self.__session = None
-        self.reload()
+        """Call remove() method on the private session attribute"""
+        self.__session.remove()
 
     def get(self, cls, id):
         """Retrieve one object based on class name and ID."""
