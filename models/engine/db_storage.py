@@ -58,7 +58,7 @@ class DBStorage:
         self.__session.commit()
 
     def delete(self, obj=None):
-        """Delete object from the database."""
+        """Delete obj from the current database session"""
         if obj is not None:
             self.__session.delete(obj)
 
@@ -70,8 +70,8 @@ class DBStorage:
         self.__session = Session()
 
     def close(self):
-        """Close the current session."""
-        self.__session.close()
+        """Call remove() method on the private session attribute"""
+        self.__session.remove()
 
     def get(self, cls, id):
         """Retrieve one object based on class name and ID."""

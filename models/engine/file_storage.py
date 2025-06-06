@@ -69,21 +69,15 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """Delete an object from __objects if it exists.
-        
-        Args:
-            obj: The object to delete. If None, do nothing.
-            
-        This method removes an object from the storage if it exists.
-        If obj is None, the method does nothing.
-        After deletion, the storage is automatically saved.
-        """
-        print("OK", end="")
+        """Delete obj from __objects if it's inside"""
         if obj is not None:
-            key = "{}.{}".format(obj.__class__.__name__, obj.id)
+            key = obj.__class__.__name__ + '.' + obj.id
             if key in self.__objects:
                 del self.__objects[key]
-                self.save()
+
+    def close(self):
+        """Call reload() method for deserializing the JSON file to objects"""
+        self.reload()
 
 
 if __name__ == "__main__":
