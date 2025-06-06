@@ -27,10 +27,10 @@ class FileStorage:
 
     def all(self, cls=None):
         """Return a dictionary of all objects or objects of a specific class.
-        
+
         Args:
-            cls (type, optional): If provided, returns only objects of this class.
-                                 If None, returns all objects.
+            cls (type, optional): If provided, returns only objects of this
+                class. If None, returns all objects.
         Returns:
             dict: A dictionary of objects filtered by class if specified.
         """
