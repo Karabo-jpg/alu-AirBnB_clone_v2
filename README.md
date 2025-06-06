@@ -142,3 +142,6 @@ Usage: <class_name>.update(<_id>, <dictionary>)
 <br>
 
 Karabo's alu-AirBnB_clone_v2 
+
+Directory: web_flask/
+Date: 2025-06-06 11:13:06 +0300
