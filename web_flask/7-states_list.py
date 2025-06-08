@@ -1,10 +1,24 @@
 #!/usr/bin/python3
 """
-Script that starts a Flask web application.
+Script that starts a Flask web application for the AirBnB clone v2 project.
 
-The application listens on 0.0.0.0, port 5000.
+This module implements a Flask web application that displays a list of all
+State objects present in the database. It uses SQLAlchemy for database
+operations and Jinja2 for template rendering.
+
+Requirements:
+    - The application must listen on 0.0.0.0, port 5000
+    - States must be sorted by name (A->Z)
+    - The database connection must be properly closed after each request
+    - Templates should be in the web_flask/templates folder
+
 Routes:
-    /states_list: display a HTML page with a list of all State objects.
+    /states_list: Displays a HTML page with a list of all State objects
+                 present in the database.
+
+Template Used:
+    7-states_list.html: Template file that displays the list of states
+                        in an HTML format.
 """
 from flask import Flask, render_template
 from models import storage
@@ -35,5 +49,11 @@ def states_list():
 
 
 if __name__ == '__main__':
-    """Main Function"""
+    """
+    Main Function - Starts the Flask web application.
+    
+    The application will start listening on 0.0.0.0:5000
+    This means it will be accessible from any IP address
+    on the machine using port 5000.
+    """
     app.run(host='0.0.0.0', port=5000)
