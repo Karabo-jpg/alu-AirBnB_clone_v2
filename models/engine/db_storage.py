@@ -1,6 +1,7 @@
 #!/usr/bin/python3
-"""This module defines the DBStorage engine."""
-
+"""
+DBStorage class for database storage using SQLAlchemy
+"""
 from os import getenv
 from models.base_model import Base
 from models.base_model import BaseModel
@@ -14,7 +15,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
-
 
 class DBStorage:
     """Represents a database storage engine."""
@@ -72,10 +72,7 @@ class DBStorage:
 
     def close(self):
         """Remove the current session to force a new one being created."""
-        if self.__session:
-            self.__session.close()
-            self.__session.remove()
-            self.__session = None
+        self.__session.remove()
 
     def get(self, cls, id):
         """Retrieve one object based on class name and ID."""

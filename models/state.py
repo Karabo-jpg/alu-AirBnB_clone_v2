@@ -1,36 +1,27 @@
 #!/usr/bin/python3
-"""Contains the State class."""
-from models.base_model import BaseModel, Base
-from sqlalchemy import Column, String
-from sqlalchemy.orm import relationship
-from os import getenv
+"""
+State class for the AirBnB project
+"""
+from models.base_model import BaseModel
 from models.city import City
+from os import getenv
 
+class State(BaseModel):
+    """State class representing a state entity"""
 
-class State(BaseModel, Base):
-    """Represents a state for a MySQL database.
+    def __init__(self, *args, **kwargs):
+        """Initialize a new State instance"""
+        super().__init__(*args, **kwargs)
 
-    Inherits from SQLAlchemy Base and links to the MySQL table states.
-
-    Attributes:
-        __tablename__ (str): The name of the MySQL table to store States.
-        name (sqlalchemy String): The name of the State.
-        cities (sqlalchemy relationship): The State-City relationship.
-    """
-    __tablename__ = 'states'
-    name = Column(String(128), nullable=False)
-
-    if getenv('HBNB_TYPE_STORAGE') == 'db':
-        cities = relationship("City",
-                            backref="state",
-                            cascade="all, delete-orphan")
-    else:
-        @property
-        def cities(self):
-            """Get a list of all related City objects."""
-            from models import storage
-            city_list = []
-            for city in storage.all(City).values():
+    @property
+    def cities(self):
+        """Getter method to return the list of City objects linked to the State."""
+        from models import storage
+        if getenv("HBNB_TYPE_STORAGE") != "db":
+            cities_list = []
+            all_cities = storage.all(City).values()
+            for city in all_cities:
                 if city.state_id == self.id:
-                    city_list.append(city)
-            return city_list
+                    cities_list.append(city)
+            return cities_list
+        return []
