@@ -8,7 +8,7 @@ Declare a method to handle @app.teardown_appcontext
 Call in this method storage.close()
 Routes:
 /states_list: display a HTML page: (inside the tag BODY)
-H1 tag: "States"
+H1 tag: “States”
 UL tag: with the list of all State objects present in DBStorage sorted by name
 (A->Z) tip
 LI tag: description of one State: <state.id>: <B><state.name></B>
